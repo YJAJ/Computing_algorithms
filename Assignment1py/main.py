@@ -12,7 +12,7 @@ class Combinations():
         self.min_coins = 1
         self.max_coins = 0
         self.collection = collections.OrderedDict()
-        self.temp_collection = collections.OrderedDict()
+        self.temp_collection = []
 
     def find_prime(self, amount):
         self.coin_denominations.append(1)
@@ -66,7 +66,7 @@ class Combinations():
 
     def cal_combination(self, val, current_coin, right_most_coin, coin_restriction, num_coins):
         #first pruning - if value is larger than 0 and the restricted number of coins is reached
-        if (val>0 and num_coins==coin_restriction):
+        if (val not in self.coin_denominations and num_coins==coin_restriction-1):
             return 0
         #return one solution if value becomes zero and add one to the number of solutions
         #if (val==0 and num_coins==coin_restriction):
@@ -75,6 +75,7 @@ class Combinations():
             if num_coins not in self.collection:
                 self.collection[num_coins] = 0
             self.collection[num_coins] += 1
+            num_coins -= 1
             return 1
         #if value is zero but does not meet the number of coin requirements, just add one to the number of solutions
         #if (val==0 and num_coins!=coin_restriction):
@@ -83,14 +84,18 @@ class Combinations():
             if num_coins not in self.collection:
                 self.collection[num_coins] = 0
             self.collection[num_coins] += 1
+            num_coins -= 1
         nCombinations = 0
+        explored = []
         for index in range(current_coin, self.coin_den_sz):
             diff = val - self.coin_denominations[index]
             #second pruning - if a coin denomination is larger than value
-            if diff>=0:
-                if num_coins<coin_restriction:
-                    num_coins += 1
-                    nCombinations += self.cal_combination(diff, index, right_most_coin, coin_restriction, num_coins)
+            # if diff>=0:
+            #     if num_coins<coin_restriction:
+            if {self.coin_denominations[index], diff} not in self.temp_collection:
+                num_coins += 1
+                nCombinations += self.cal_combination(diff, index, right_most_coin, coin_restriction, num_coins)
+                explored.append({self.coin_denominations[index], diff})
             num_coins -= 1
         return nCombinations
 
