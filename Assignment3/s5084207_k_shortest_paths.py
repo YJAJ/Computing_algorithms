@@ -10,10 +10,7 @@ class Node:
         self.key = value
         self.neighbours = {}
 
-    def add_neighbour(self, node, weight=0):
-        self.neighbours[node] = weight
-
-    def get_neighbour(self):
+    def get_neighbours(self):
         return self.neighbours
 
     def get_key(self):
@@ -22,6 +19,9 @@ class Node:
     def get_weight(self, node):
         return self.neighbours[node]
 
+    def add_neighbour(self, node, weight=0):
+        self.neighbours[node] = weight
+
     def __str__(self):
         return str(self.key) + " is directed to " + str([x.key for x in self.neighbours])
 
@@ -29,19 +29,6 @@ class Graph:
     def __init__(self):
         self.node_list = {}
         self.n_size = 0
-
-    def add_vertex(self, value):
-        self.n_size += 1
-        new_node = Node(value)
-        self.node_list[value] = new_node
-        return new_node
-
-    def add_edge(self, prev_node, next_node, weight=0):
-        if prev_node not in self.node_list:
-            self.add_vertex(prev_node)
-        if next_node not in self.node_list:
-            self.add_vertex(next_node)
-        self.node_list[prev_node].add_neighbour(self.node_list[next_node], weight)
 
     def get_size(self):
         return self.n_size
@@ -58,6 +45,19 @@ class Graph:
     def copy_original(self):
         return copy.deepcopy(self)
 
+    def add_vertex(self, value):
+        self.n_size += 1
+        new_node = Node(value)
+        self.node_list[value] = new_node
+        return new_node
+
+    def add_edge(self, prev_node, next_node, weight=0):
+        if prev_node not in self.node_list:
+            self.add_vertex(prev_node)
+        if next_node not in self.node_list:
+            self.add_vertex(next_node)
+        self.node_list[prev_node].add_neighbour(self.node_list[next_node], weight)
+
     def remove_vertex(self, node):
         if node in self.node_list:
             del self.node_list[node.get_key()]
@@ -65,7 +65,7 @@ class Graph:
     def __iter__(self):
         return iter(self.node_list.values())
 
-#Wang et al., 2018, Razali and Geraghty, 2011
+#Wang et al., 2018 and Razali and Geraghty, 2011
 class GeneticAlgorithm:
     def __init__(self, graph_passed, origin, destination):
         self.graph = graph_passed
@@ -83,14 +83,14 @@ class GeneticAlgorithm:
             one_path = list()
             one_path.append(curr_node)
             #randomly select a neighbour
-            neighbours = list(curr_node.get_neighbour())
+            neighbours = list(curr_node.get_neighbours())
             while neighbours is not None or len(neighbours)!=0:
                 rd_selected_neighbour = random.choice(neighbours)
                 if rd_selected_neighbour in one_path:
                     neighbours.remove(rd_selected_neighbour)
                 if rd_selected_neighbour not in one_path:
                     curr_node = rd_selected_neighbour
-                    neighbours = list(curr_node.get_neighbour())
+                    neighbours = list(curr_node.get_neighbours())
                     one_path.append(curr_node)
                     if curr_node.get_key()==self.destination:
                         return one_path
@@ -105,7 +105,7 @@ class GeneticAlgorithm:
         #try all edges v-1 times
         for graph_vertex in range(self.graph.get_size()-1):
             for u in self.graph:
-                for v in u.get_neighbour():
+                for v in u.get_neighbours():
                     # print(u.get_key(), v.get_key(), u.get_weight(v))
                     if (distance[u.get_key()] != float("inf")) and (distance[u.get_key()] + u.get_weight(v) < distance[v.get_key()]):
                         distance[v.get_key()] = distance[u.get_key()] + u.get_weight(v)
@@ -318,6 +318,7 @@ if __name__=="__main__":
 
     #instantiate genetic algorithm
     genetic_algorithm = GeneticAlgorithm(g, 'C', 'H')
+
     #parameters for genetic algorithm
     num_evolution = 100
     elite_size = 2
