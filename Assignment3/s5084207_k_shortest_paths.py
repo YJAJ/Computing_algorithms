@@ -2,6 +2,7 @@ from collections import defaultdict
 import operator
 from more_itertools import unique_everseen
 import string
+import time
 import random
 import copy
 
@@ -67,34 +68,55 @@ class Graph:
 
 #Wang et al., 2018 and Razali and Geraghty, 2011
 class GeneticAlgorithm:
-    def __init__(self, graph_passed, origin, destination):
+    def __init__(self, graph_passed, origin, destination, k):
         self.graph = graph_passed
         self.g_size = self.graph.get_size()
         self.origin = origin
         self.destination = destination
         self.population = []
-        self.pop_size = self.g_size*5
+        self.pop_size = k*2
         self.pop_with_fitness = []
 
+    # def random_initialisation(self, graph):
+    #     while True:
+    #         # print(graph.get_vertex(self.origin))
+    #         curr_node = graph.get_vertex(self.origin)
+    #         #add origin into path
+    #         one_path = list()
+    #         one_path.append(curr_node)
+    #         #randomly select a neighbour
+    #         neighbours = list(curr_node.get_neighbours())
+    #         # save_neighbours = list(curr_node.get_neighbours())
+    #         while neighbours is not None or len(neighbours)!=0:
+    #             if len(neighbours)==0:
+    #                 # rd_selected_neighbour = random.choice(save_neighbours)
+    #                 break
+    #             else:
+    #                 rd_selected_neighbour = random.choice(neighbours)
+    #             if rd_selected_neighbour in one_path:
+    #                 neighbours.remove(rd_selected_neighbour)
+    #             print(len(one_path))
+    #             if rd_selected_neighbour not in one_path:
+    #                 curr_node = rd_selected_neighbour
+    #                 neighbours = list(curr_node.get_neighbours())
+    #                 # save_neighbours = neighbours.copy()
+    #                 one_path.append(curr_node)
+    #                 if curr_node.get_key()==self.destination:
+    #                     return one_path
+
     def random_initialisation(self, graph):
-        while True:
-            # print(graph.get_vertex(self.origin))
-            curr_node = graph.get_vertex(self.origin)
-            #add origin into path
-            one_path = list()
-            one_path.append(curr_node)
-            #randomly select a neighbour
-            neighbours = list(curr_node.get_neighbours())
-            while neighbours is not None or len(neighbours)!=0:
-                rd_selected_neighbour = random.choice(neighbours)
-                if rd_selected_neighbour in one_path:
-                    neighbours.remove(rd_selected_neighbour)
-                if rd_selected_neighbour not in one_path:
-                    curr_node = rd_selected_neighbour
-                    neighbours = list(curr_node.get_neighbours())
-                    one_path.append(curr_node)
-                    if curr_node.get_key()==self.destination:
-                        return one_path
+
+    # def random_initialisation_n(self, graph):
+    #     curr_node = random.sample(cities, 1)[0]
+    #     one_path = [curr_node]
+    #     remaining_cities = [rc for rc in cities if rc != curr_node]
+    #     # loop while the list of remaining cities are not empty
+    #     while remaining_cities:
+    #         # get the minimum distance
+    #         curr_node = min(remaining_cities, key=lambda c: c.e2distance(curr_node))
+    #         one_path.append(curr_node)
+    #         remaining_cities.remove(curr_node)
+    #     return one_path
 
     #one of initialisation method - Bellman Ford
     def bellman_ford_initialisation(self):
@@ -117,7 +139,6 @@ class GeneticAlgorithm:
         while curr_node!=self.origin:
             bf_best_path.insert(0,self.graph.get_vertex(prev_node[curr_node]))
             curr_node = prev_node[curr_node]
-        print(bf_best_path)
         return bf_best_path
 
     #check duplicate returns true or false
@@ -136,9 +157,11 @@ class GeneticAlgorithm:
         # self.population.append(bf_path)
         #rest parents filled with random initialisation
         for num_population in range(self.pop_size-1):
+            print(num_population)
             path = self.random_initialisation(self.graph)
             if not self.is_duplicate(path, self.population):
                 self.population.append(path)
+        print("Initialise population Time taken (secs) = ", time.process_time())
 
     #Wang et al., 2018
     def construct_genepool(self, option):
@@ -157,6 +180,7 @@ class GeneticAlgorithm:
             if node not in gene_pool:
                 graph.remove_vertex(node)
         # print([x.get_key() for x in graph])
+        print("construct genepool Time taken (secs) = ", time.process_time())
         return graph
 
     def crossover(self):
@@ -167,6 +191,7 @@ class GeneticAlgorithm:
             # print([x.get_key() for x in child])
             if not self.is_duplicate(child, self.population):
                 self.population.append(child)
+        print("crossover Time taken (secs) = ", time.process_time())
 
     def mutation(self, mutant_percent):
         for mutation_times in range(int(mutant_percent*len(self.population))):
@@ -174,6 +199,7 @@ class GeneticAlgorithm:
             mutant = self.random_initialisation(gene_pool_graph)
             if not self.is_duplicate(mutant, self.population):
                 self.population.append(mutant)
+        print("mutation Time taken (secs) = ", time.process_time())
 
     #calculate total distance - addition of weights
     def cal_total_distance(self):
@@ -187,12 +213,14 @@ class GeneticAlgorithm:
                 total_distance += curr_node.get_weight(next_node)
                 curr_node = next_node
             self.pop_with_fitness.append(total_distance)
+        print("calculate distance Time taken (secs) = ", time.process_time())
 
     #sort based on fitness score i.e. addition of weights
     def sort_fit_score(self):
         self.pop_with_fitness, self.population = zip(*[(fitness, path) for fitness, path in sorted(zip(self.pop_with_fitness,  self.population), key=lambda x: x[0])])
         self.pop_with_fitness = list(self.pop_with_fitness)
         self.population = list(self.population)
+        print("sort fit score Time taken (secs) = ", time.process_time())
 
     # def remove_duplicate(self):
     #     population = []
@@ -283,6 +311,7 @@ class GeneticAlgorithm:
                         next_population.append(self.population[0])
         self.population = next_population
         self.cal_total_distance()
+        print("rank selection Time taken (secs) = ", time.process_time())
 
     def select_k_shortest_path(self, kth):
         self.sort_fit_score()
@@ -319,11 +348,13 @@ if __name__=="__main__":
                     g.add_vertex(node)
             elif count_line==num_lines-1:
                 origin, destination, k = line.split()
+                origin = int(origin)
+                destination = int(destination)
                 k = int(k)
             else:
                 prev, nxt, weight = line.split()
                 # print(prev, nxt, weight)
-                g.add_edge(prev, nxt, float(weight))
+                g.add_edge(int(prev), int(nxt), float(weight))
             count_line += 1
     # for i in range(6):
     #     g.add_vertex(string.ascii_uppercase[i + 2])
@@ -339,7 +370,7 @@ if __name__=="__main__":
     # g.add_edge('G', 'H', 2)
 
     #instantiate genetic algorithm
-    genetic_algorithm = GeneticAlgorithm(g, origin, destination)
+    genetic_algorithm = GeneticAlgorithm(g, origin, destination, k)
 
     #parameters for genetic algorithm
     num_evolution = 1
