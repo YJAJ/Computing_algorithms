@@ -78,6 +78,7 @@ class GeneticAlgorithm:
 
     def random_initialisation(self, graph):
         while True:
+            # print(graph.get_vertex(self.origin))
             curr_node = graph.get_vertex(self.origin)
             #add origin into path
             one_path = list()
@@ -98,9 +99,9 @@ class GeneticAlgorithm:
     #one of initialisation method - Bellman Ford
     def bellman_ford_initialisation(self):
         #initialise graph nodes to infinity except for the origin that has 0
-        distance = {string.ascii_uppercase[index+2]: float("inf") for index in range(6)}
+        distance = {index: float("inf") for index in range(self.g_size)}
         distance[self.origin] = 0
-        prev_node = {string.ascii_uppercase[node_key_index+2]: None for node_key_index in range(6)}
+        prev_node = {node_key_index: None for node_key_index in range(self.g_size)}
 
         #try all edges v-1 times
         for graph_vertex in range(self.graph.get_size()-1):
@@ -116,6 +117,7 @@ class GeneticAlgorithm:
         while curr_node!=self.origin:
             bf_best_path.insert(0,self.graph.get_vertex(prev_node[curr_node]))
             curr_node = prev_node[curr_node]
+        print(bf_best_path)
         return bf_best_path
 
     #check duplicate returns true or false
@@ -130,8 +132,8 @@ class GeneticAlgorithm:
     #create the number of poplution = 5*graph size
     def initialise_population(self):
         #first parent population Bellman-Ford
-        bf_path = self.bellman_ford_initialisation()
-        self.population.append(bf_path)
+        # bf_path = self.bellman_ford_initialisation()
+        # self.population.append(bf_path)
         #rest parents filled with random initialisation
         for num_population in range(self.pop_size-1):
             path = self.random_initialisation(self.graph)
@@ -284,7 +286,7 @@ class GeneticAlgorithm:
 
     def select_k_shortest_path(self, kth):
         self.sort_fit_score()
-        print([x.get_key() for path in self.population for x in path])
+        # print([x.get_key() for path in self.population for x in path])
         return self.pop_with_fitness[:kth]
 
 def evolve_genes(genetic_algo, num_gen, selection, elite_sz, kshortest):
@@ -303,27 +305,47 @@ def evolve_genes(genetic_algo, num_gen, selection, elite_sz, kshortest):
 
 if __name__=="__main__":
     g = Graph()
-    for i in range(6):
-        g.add_vertex(string.ascii_uppercase[i + 2])
-
-    g.add_edge('C', 'D', 3)
-    g.add_edge('C', 'E', 2)
-    g.add_edge('D', 'F', 4)
-    g.add_edge('E', 'D', 1)
-    g.add_edge('E', 'F', 2)
-    g.add_edge('E', 'G', 3)
-    g.add_edge('F', 'G', 2)
-    g.add_edge('F', 'H', 1)
-    g.add_edge('G', 'H', 2)
+    file_name = "finalInput.txt"
+    num_lines = sum(1 for line in open(file_name))
+    count_line = 0
+    origin = None
+    destination = None
+    k = 3
+    with open(file_name) as f:
+        for line in f:
+            if count_line==0:
+                n_nodes, n_edges = line.split()
+                for node in range(int(n_nodes)):
+                    g.add_vertex(node)
+            elif count_line==num_lines-1:
+                origin, destination, k = line.split()
+                k = int(k)
+            else:
+                prev, nxt, weight = line.split()
+                # print(prev, nxt, weight)
+                g.add_edge(prev, nxt, float(weight))
+            count_line += 1
+    # for i in range(6):
+    #     g.add_vertex(string.ascii_uppercase[i + 2])
+    #
+    # g.add_edge('C', 'D', 3)
+    # g.add_edge('C', 'E', 2)
+    # g.add_edge('D', 'F', 4)
+    # g.add_edge('E', 'D', 1)
+    # g.add_edge('E', 'F', 2)
+    # g.add_edge('E', 'G', 3)
+    # g.add_edge('F', 'G', 2)
+    # g.add_edge('F', 'H', 1)
+    # g.add_edge('G', 'H', 2)
 
     #instantiate genetic algorithm
-    genetic_algorithm = GeneticAlgorithm(g, 'C', 'H')
+    genetic_algorithm = GeneticAlgorithm(g, origin, destination)
 
     #parameters for genetic algorithm
-    num_evolution = 100
+    num_evolution = 1
     elite_size = 2
     selection_method = "rank_roulette"
-    k = 3
+
     #run k_shortest algorithm
     k_shortest = evolve_genes(genetic_algorithm, num_evolution, selection_method, elite_size, k)
     print(k_shortest)
